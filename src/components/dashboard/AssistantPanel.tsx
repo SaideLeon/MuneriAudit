@@ -62,7 +62,7 @@ export function AssistantPanel({
   history,
   onLoadFromHistory
 }: AssistantPanelProps) {
-  const isHidden = isAssistantCollapsed || isPreviewExpanded;
+  const isHidden = isAssistantCollapsed;
 
   return (
     <div className={`flex flex-col border-r border-[var(--border)] transition-all duration-300 ease-in-out ${isHidden ? 'w-0 opacity-0 overflow-hidden pointer-events-none' : !isPreviewVisible ? 'flex-1' : 'flex-1 min-w-[380px]'}`}>

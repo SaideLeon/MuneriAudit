@@ -62,6 +62,7 @@ export function DashboardLayout({
   const [lastContentId, setLastContentId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isAssistantCollapsed, setIsAssistantCollapsed] = useState(false);
+  const [isPreviewCollapsed, setIsPreviewCollapsed] = useState(false);
   const [vulnSearch, setVulnSearch] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -139,10 +140,12 @@ export function DashboardLayout({
         onClearPreview={onClearPreview}
         isAssistantCollapsed={isAssistantCollapsed}
         isPreviewVisible={isPreviewVisible}
+        isPreviewCollapsed={isPreviewCollapsed}
         onRestorePanels={() => {
           setIsAssistantCollapsed(false);
           setIsPreviewVisible(true);
           setIsPreviewExpanded(false);
+          setIsPreviewCollapsed(false);
         }}
       />
 
@@ -177,6 +180,8 @@ export function DashboardLayout({
           setIsPreviewVisible={setIsPreviewVisible}
           isPreviewExpanded={isPreviewExpanded}
           setIsPreviewExpanded={setIsPreviewExpanded}
+          isPreviewCollapsed={isPreviewCollapsed}
+          setIsPreviewCollapsed={setIsPreviewCollapsed}
           isAssistantCollapsed={isAssistantCollapsed}
           setIsAssistantCollapsed={setIsAssistantCollapsed}
           previewContent={previewContent}

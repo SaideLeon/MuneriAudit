@@ -34,6 +34,7 @@ interface SidebarProps {
   onClearPreview: () => void;
   isAssistantCollapsed: boolean;
   isPreviewVisible: boolean;
+  isPreviewCollapsed: boolean;
   onRestorePanels: () => void;
 }
 
@@ -57,6 +58,7 @@ export function Sidebar({
   onClearPreview,
   isAssistantCollapsed,
   isPreviewVisible,
+  isPreviewCollapsed,
   onRestorePanels
 }: SidebarProps) {
   return (
@@ -77,7 +79,7 @@ export function Sidebar({
         </button>
       </div>
 
-      {(isAssistantCollapsed || !isPreviewVisible) && !isSidebarCollapsed && (
+      {(isAssistantCollapsed || !isPreviewVisible || isPreviewCollapsed) && !isSidebarCollapsed && (
         <div className="px-4 py-2 bg-[var(--gold2)]/10 border-b border-[var(--border)] flex items-center justify-between">
           <span className="font-mono text-[9px] uppercase tracking-widest text-[var(--gold2)]">Painéis Ocultos</span>
           <button 

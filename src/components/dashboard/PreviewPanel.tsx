@@ -42,6 +42,7 @@ export function PreviewPanel({
 }: PreviewPanelProps) {
   // Quando assistente está colapsado (mas não expandido), preview cresce no flex
   const isFlexFull = !isPreviewExpanded && isAssistantCollapsed;
+  const isMarkdown = previewContent?.path.toLowerCase().endsWith('.md');
 
   // Classe base do painel (estado normal ou assistente colapsado)
   const panelClass = !isPreviewVisible
@@ -85,16 +86,22 @@ export function PreviewPanel({
         <div className="flex-1 overflow-hidden bg-[#1e1e1e] relative">
           <div className="absolute inset-0 overflow-auto custom-scrollbar">
             {previewContent ? (
-              <div className="min-w-full inline-block">
-                <SyntaxHighlighter
-                  language="typescript"
-                  style={vscDarkPlus}
-                  customStyle={{ margin: 0, padding: '2rem', fontSize: '0.85rem', background: 'transparent' }}
-                  showLineNumbers
-                >
-                  {previewContent.content}
-                </SyntaxHighlighter>
-              </div>
+              isMarkdown ? (
+                <div className="h-full overflow-y-auto p-8 prose prose-invert max-w-none prose-headings:font-serif prose-headings:text-[var(--parchment)] prose-p:text-[var(--faint)] prose-code:text-[var(--gold2)] custom-scrollbar">
+                  <ReactMarkdown>{previewContent.content}</ReactMarkdown>
+                </div>
+              ) : (
+                <div className="min-w-full inline-block">
+                  <SyntaxHighlighter
+                    language="typescript"
+                    style={vscDarkPlus}
+                    customStyle={{ margin: 0, padding: '2rem', fontSize: '0.85rem', background: 'transparent' }}
+                    showLineNumbers
+                  >
+                    {previewContent.content}
+                  </SyntaxHighlighter>
+                </div>
+              )
             ) : blueprint ? (
               <div className="h-full overflow-y-auto p-8 prose prose-invert max-w-none prose-headings:font-serif prose-headings:text-[var(--parchment)] prose-p:text-[var(--faint)] prose-code:text-[var(--gold2)] custom-scrollbar">
                 <ReactMarkdown>{blueprint}</ReactMarkdown>
@@ -167,16 +174,22 @@ export function PreviewPanel({
          <div className="flex-1 overflow-hidden bg-[#1e1e1e] relative">
             <div className="absolute inset-0 overflow-auto custom-scrollbar">
               {previewContent ? (
-                <div className="min-w-full inline-block">
-                  <SyntaxHighlighter 
-                    language="typescript" 
-                    style={vscDarkPlus} 
-                    customStyle={{ margin: 0, padding: '2rem', fontSize: '0.85rem', background: 'transparent' }}
-                    showLineNumbers
-                  >
-                    {previewContent.content}
-                  </SyntaxHighlighter>
-                </div>
+                isMarkdown ? (
+                  <div className="h-full overflow-y-auto p-8 prose prose-invert max-w-none prose-headings:font-serif prose-headings:text-[var(--parchment)] prose-p:text-[var(--faint)] prose-code:text-[var(--gold2)] custom-scrollbar">
+                    <ReactMarkdown>{previewContent.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="min-w-full inline-block">
+                    <SyntaxHighlighter 
+                      language="typescript" 
+                      style={vscDarkPlus} 
+                      customStyle={{ margin: 0, padding: '2rem', fontSize: '0.85rem', background: 'transparent' }}
+                      showLineNumbers
+                    >
+                      {previewContent.content}
+                    </SyntaxHighlighter>
+                  </div>
+                )
               ) : blueprint ? (
                 <div className="h-full overflow-y-auto p-8 prose prose-invert max-w-none prose-headings:font-serif prose-headings:text-[var(--parchment)] prose-p:text-[var(--faint)] prose-code:text-[var(--gold2)] custom-scrollbar">
                    <ReactMarkdown>{blueprint}</ReactMarkdown>

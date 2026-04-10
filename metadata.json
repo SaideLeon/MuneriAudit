@@ -1,0 +1,5 @@
+{
+  "name": "Muneri Security Audit",
+  "description": "Auditoria de segurança de código para repositórios GitHub, utilizando IA para detectar vulnerabilidades e gerar relatórios detalhados.",
+  "requestFramePermissions": []
+}

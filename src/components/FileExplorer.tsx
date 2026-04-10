@@ -112,8 +112,8 @@ export function FileExplorer({ files, onSelect, onAutoSelect, analyzing, onPrevi
   };
 
   return (
-    <section className={compact ? "w-full" : "mx-auto w-full max-w-5xl px-5 py-12"}>
-      <div className={compact ? "flex flex-col h-full" : "grid gap-8 md:grid-cols-[1fr_300px]"}>
+    <section className={compact ? "w-full h-full flex flex-col" : "mx-auto w-full max-w-5xl px-5 py-12"}>
+      <div className={compact ? "flex-1 flex flex-col overflow-hidden" : "grid gap-8 md:grid-cols-[1fr_300px]"}>
         <div className={compact ? "flex-1 flex flex-col overflow-hidden" : "rounded-xl border border-[var(--border)] bg-[var(--parchment)] p-6 overflow-hidden"}>
           {!compact && (
             <div className="flex items-center justify-between mb-6">

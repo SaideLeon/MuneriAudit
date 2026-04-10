@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Shield, 
   ShieldAlert, 
@@ -50,6 +50,9 @@ interface DashboardLayoutProps {
   analyzing: boolean;
   onAnalyze: (paths: string[]) => void;
   onAutoSelect: () => void;
+  onRefactor: (vulnerability: SecurityVulnerability) => Promise<void>;
+  refactoringSuggestion: string | null;
+  refactoringLoading: boolean;
 }
 
 export function DashboardLayout({ 
@@ -69,13 +72,33 @@ export function DashboardLayout({
   previewContent,
   analyzing,
   onAnalyze,
-  onAutoSelect
+  onAutoSelect,
+  onRefactor,
+  refactoringSuggestion,
+  refactoringLoading
 }: DashboardLayoutProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'vulnerabilities' | 'report' | 'blueprint'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'vulnerabilities' | 'report' | 'blueprint' | 'refactor'>('overview');
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isAssistantCollapsed, setIsAssistantCollapsed] = useState(false);
   const [vulnSearch, setVulnSearch] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(console.error);
+    } else {
+      document.exitFullscreen().catch(console.error);
+    }
+  };
 
   const filteredVulns = report?.vulnerabilities.filter(v => 
     v.location.toLowerCase().includes(vulnSearch.toLowerCase()) ||
@@ -170,6 +193,9 @@ export function DashboardLayout({
                     </span>
                  </div>
                  <div className="flex items-center gap-2">
+                    <button onClick={toggleFullscreen} className="p-1.5 rounded hover:bg-[var(--border)] text-[var(--muted)]" title={isFullscreen ? "Sair de Tela Cheia" : "Tela Cheia"}>
+                        {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                    </button>
                     <button onClick={onToggleTheme} className="p-1.5 rounded hover:bg-[var(--border)] text-[var(--muted)]">
                         {themeMode === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
                     </button>
@@ -214,6 +240,14 @@ export function DashboardLayout({
                     >
                       Relatório
                     </button>
+                    {refactoringSuggestion && (
+                      <button 
+                        onClick={() => setActiveTab('refactor')}
+                        className={`px-3 py-1 rounded font-mono text-[10px] uppercase tracking-widest transition ${activeTab === 'refactor' ? 'bg-[var(--gold2)] text-black' : 'text-[var(--muted)] hover:bg-[var(--border)]/30'}`}
+                      >
+                        Refatoração
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -228,14 +262,16 @@ export function DashboardLayout({
           </header>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar p-6 relative">
-            {analyzing && (
+            {analyzing || refactoringLoading ? (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--parchment)]/60 backdrop-blur-[1px]">
                 <div className="text-center space-y-4">
                   <div className="h-12 w-12 mx-auto animate-spin rounded-full border-4 border-[var(--gold2)] border-t-transparent" />
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--gold2)]">Analisando...</p>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--gold2)]">
+                    {analyzing ? 'Analisando...' : 'Refatorando...'}
+                  </p>
                 </div>
               </div>
-            )}
+            ) : null}
             {!report ? (
               <div className="h-full flex flex-col">
                 <div className="mb-8">
@@ -309,6 +345,10 @@ export function DashboardLayout({
               <div className="prose prose-sm prose-invert max-w-none prose-headings:font-serif prose-headings:text-[var(--parchment)] prose-p:text-[var(--faint)] prose-code:text-[var(--gold2)]">
                 <ReactMarkdown>{report?.relatorio_markdown}</ReactMarkdown>
               </div>
+            ) : activeTab === 'refactor' ? (
+              <div className="prose prose-sm prose-invert max-w-none prose-headings:font-serif prose-headings:text-[var(--parchment)] prose-p:text-[var(--faint)] prose-code:text-[var(--gold2)]">
+                <ReactMarkdown>{refactoringSuggestion}</ReactMarkdown>
+              </div>
             ) : activeTab === 'vulnerabilities' ? (
               <div className="space-y-4">
                 <div className="relative mb-6">
@@ -328,7 +368,16 @@ export function DashboardLayout({
                       <span className="font-mono text-[9px] text-[var(--faint)]">{v.rule}</span>
                     </div>
                     <h5 className="font-serif text-sm mb-2">{v.location}</h5>
-                    <p className="text-xs text-[var(--muted)] line-clamp-2">{v.description}</p>
+                    <p className="text-xs text-[var(--muted)] line-clamp-2 mb-4">{v.description}</p>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRefactor(v).then(() => setActiveTab('refactor'));
+                      }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded border border-[var(--border)] text-[var(--muted)] font-mono text-[9px] uppercase tracking-widest hover:border-[var(--gold2)] hover:text-[var(--gold2)] transition"
+                    >
+                      <Code size={12} /> Refatorar com IA
+                    </button>
                   </div>
                 ))}
               </div>

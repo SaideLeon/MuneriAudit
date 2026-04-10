@@ -31,6 +31,8 @@ export default function AuditPage() {
   const [blueprintLoading, setBlueprintLoading] = useState(false);
   const [previewFile, setPreviewFile] = useState<{ path: string; content: string } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [refactoringSuggestion, setRefactoringSuggestion] = useState<string | null>(null);
+  const [refactoringLoading, setRefactoringLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -156,6 +158,24 @@ export default function AuditPage() {
     }
   };
 
+  const handleRefactor = async (vulnerability: any) => {
+    if (!repoInfo) return;
+    setRefactoringLoading(true);
+    setRefactoringSuggestion(null);
+    try {
+      const github = new GitHubService(repoInfo.token);
+      const ai = new AIService();
+      const filePath = vulnerability.location.split(' : ')[0];
+      const content = await github.getFileContent(repoInfo.owner, repoInfo.repo, filePath);
+      const suggestion = await ai.getRefactoringSuggestion(vulnerability, content);
+      setRefactoringSuggestion(suggestion);
+    } catch (err) {
+      setError('Erro ao gerar sugestão de refatoração.');
+    } finally {
+      setRefactoringLoading(false);
+    }
+  };
+
   return (
     <main className={`${themeVars} min-h-screen bg-[var(--parchment)] text-[var(--ink)] transition-colors duration-300`}>
       {files.length === 0 && <MuneriNav themeMode={themeMode} onToggleTheme={toggleThemeMode} />}
@@ -205,6 +225,9 @@ export default function AuditPage() {
                 analyzing={analyzing}
                 onAnalyze={handleAnalyzeFiles}
                 onAutoSelect={handleAutoSelect}
+                onRefactor={handleRefactor}
+                refactoringSuggestion={refactoringSuggestion}
+                refactoringLoading={refactoringLoading}
               />
             </motion.div>
           )}

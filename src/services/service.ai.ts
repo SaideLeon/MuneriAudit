@@ -202,4 +202,40 @@ Para cada vulnerabilidade, gera blueprint com:
   async generateBlueprint(report: SecurityReport): Promise<string> {
     return report.blueprint_markdown;
   }
+
+  async getRefactoringSuggestion(vulnerability: SecurityVulnerability, fileContent: string): Promise<string> {
+    const prompt = `
+      Como um especialista em refatoração de código e segurança, analise a seguinte vulnerabilidade e o código fonte associado.
+      Forneça sugestões detalhadas de refatoração para corrigir o problema, seguindo as melhores práticas de design de software (SOLID, Clean Code) e segurança.
+
+      VULNERABILIDADE:
+      Regra: ${vulnerability.rule}
+      Severidade: ${vulnerability.severity}
+      Descrição: ${vulnerability.description}
+      Localização: ${vulnerability.location}
+      Prova: ${vulnerability.proof}
+
+      CÓDIGO FONTE:
+      \`\`\`
+      ${fileContent}
+      \`\`\`
+
+      Retorne a resposta em Markdown, incluindo:
+      1. Explicação do problema no contexto do código.
+      2. Sugestão de refatoração (código corrigido com comentários em português).
+      3. Por que esta refatoração é superior em termos de segurança e manutenção.
+    `;
+
+    try {
+      const response = await this.ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      });
+
+      return response.text || 'Não foi possível gerar sugestões de refatoração.';
+    } catch (error) {
+      console.error('Error getting refactoring suggestion:', error);
+      throw error;
+    }
+  }
 }

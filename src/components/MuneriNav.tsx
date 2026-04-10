@@ -1,8 +1,40 @@
 'use client';
-import { Sun, Moon, ArrowDown, LogOut, User } from 'lucide-react';
+import { Sun, Moon, ArrowDown, LogOut, User, Maximize, Minimize } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
+
+const FullscreenToggle = () => {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(console.error);
+    } else {
+      document.exitFullscreen().catch(console.error);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggleFullscreen}
+      className="flex items-center gap-1.5 rounded border border-[var(--border)] px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--muted)] transition hover:border-[var(--gold2)] hover:text-[var(--gold2)]"
+      title={isFullscreen ? "Sair de Tela Cheia" : "Tela Cheia"}
+    >
+      {isFullscreen ? <Minimize size={12} /> : <Maximize size={12} />}
+      <span className="hidden sm:inline">{isFullscreen ? "Sair" : "Fullscreen"}</span>
+    </button>
+  );
+};
 
 const ThemeToggle = ({ 
   themeMode, 
@@ -53,6 +85,7 @@ export function MuneriNav({
           </div>
           
           <div className="flex items-center gap-3">
+            <FullscreenToggle />
             <ThemeToggle themeMode={themeMode} onToggleTheme={onToggleTheme} size={12} />
             
             {mounted && isAuthenticated ? (

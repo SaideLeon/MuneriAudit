@@ -2,7 +2,6 @@
 import { 
   FileCode, 
   Download, 
-  X, 
   Minimize2, 
   Maximize2,
   PanelRightOpen,
@@ -74,13 +73,6 @@ export function PreviewPanel({
                 <Download size={16} />
               </button>
             )}
-            <button
-              onClick={() => { onClearPreview(); setIsPreviewVisible(false); setIsPreviewExpanded(false); }}
-              className="p-1.5 rounded hover:bg-[var(--border)] text-[var(--muted)]"
-              title="Fechar Visualização"
-            >
-              <X size={16} />
-            </button>
             <button
               onClick={() => setIsPreviewExpanded(false)}
               className="p-1.5 rounded hover:bg-[var(--border)] text-[var(--muted)]"
@@ -164,21 +156,9 @@ export function PreviewPanel({
             </button>
 
             {!isPreviewCollapsed && (
-              <>
-                <button 
-                  onClick={() => {
-                    onClearPreview();
-                    setIsPreviewVisible(false);
-                  }} 
-                  className="p-1.5 rounded hover:bg-[var(--border)] text-[var(--muted)]" 
-                  title="Fechar Visualização"
-                >
-                  <X size={16} />
-                </button>
-                <button onClick={() => setIsPreviewExpanded(true)} className="p-1.5 rounded hover:bg-[var(--border)] text-[var(--muted)]" title="Maximizar">
-                  <Maximize2 size={16} />
-                </button>
-              </>
+              <button onClick={() => setIsPreviewExpanded(true)} className="p-1.5 rounded hover:bg-[var(--border)] text-[var(--muted)]" title="Maximizar">
+                <Maximize2 size={16} />
+              </button>
             )}
           </div>
        </header>

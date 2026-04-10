@@ -110,13 +110,6 @@ export function AssistantPanel({
               </>
             )}
           </div>
-          <button 
-            onClick={() => setIsAssistantCollapsed(true)}
-            className="p-1.5 rounded hover:bg-[var(--border)] text-[var(--muted)]"
-            title="Recolher Assistente"
-          >
-            <PanelRightClose size={16} />
-          </button>
         </div>
       </header>
 

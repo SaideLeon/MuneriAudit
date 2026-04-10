@@ -11,6 +11,12 @@ export interface SecurityVulnerability {
 
 export interface SecurityReport {
   score: number;
+  resultado: string;
+  criticos: number;
+  altos: number;
+  medios: number;
+  relatorio_markdown: string;
+  blueprint_markdown: string;
   vulnerabilities: SecurityVulnerability[];
 }
 
@@ -25,48 +31,112 @@ export class AIService {
     this.ai = new GoogleGenAI({ apiKey });
   }
 
+  private buildAuditPrompt(files: { path: string; content: string }[], contexto: string = '', foco: string[] = ['todos']): string {
+    const focoStr = foco.join(', ');
+    const ficheirosStr = files
+      .map((f) => `### ${f.path}\n\`\`\`\n${f.content}\n\`\`\``)
+      .join('\n\n');
+
+    return `És um auditor de segurança sénior especializado em aplicações web.
+Contexto do projecto: ${contexto || 'Não fornecido'}
+Foco da auditoria: ${focoStr}
+
+Analisa os seguintes ficheiros e executa as 3 fases da auditoria:
+
+${ficheirosStr}
+
+---
+
+## FASE 1 — DETECÇÃO DE VULNERABILIDADES
+
+Verifica obrigatoriamente as regras R01–R25:
+
+**Autenticação e Credenciais (R01–R05)**
+- R01 CRÍTICO: Passwords com MD5/SHA-1
+- R02 ALTO: Mensagens de erro com enumeração ("e-mail não encontrado")
+- R03 CRÍTICO: Secrets/API keys hardcoded
+- R04 ALTO: Autenticação manual em vez de biblioteca estabelecida
+- R05 ALTO: JWT sem mecanismo de revogação
+
+**Rate Limiting e Abuso (R06–R08)**
+- R06 ALTO: Endpoints de login/OTP sem rate limit
+- R07 ALTO: Campos sem limite de tamanho server-side
+- R08 CRÍTICO: Operações críticas sem transacção atómica
+
+**Validação de Dados (R09–R14)**
+- R09 CRÍTICO: Validação apenas no front-end
+- R10 CRÍTICO: SQL construído por concatenação (SQL Injection)
+- R11 ALTO: Conteúdo de utilizador sem escape (XSS)
+- R12 ALTO: Upload sem validação de MIME Type + Magic Bytes
+- R13 MÉDIO: URLs externas sem validação (SSRF)
+- R14 MÉDIO: URLs sem limite de tamanho
+
+**Controlo de Acesso (R15–R18)**
+- R15 CRÍTICO: Operações em recursos sem verificar propriedade (IDOR)
+- R16 ALTO: Regras de acesso implícitas ou ausentes
+- R17 CRÍTICO: RLS desactivado ou permissivo no Supabase
+- R18 ALTO: API aceita campos sensíveis sem whitelist (Mass Assignment)
+
+**Lógica de Negócio (R19–R21)**
+- R19 CRÍTICO: Operações financeiras sem ACID
+- R20 ALTO: Reembolso/saque sem verificação de pré-condições
+- R21 ALTO: Sem detecção automática de fraude
+
+**Práticas de Desenvolvimento (R22–R25)**
+- R22 CRÍTICO: Camadas interdependentes (quebra de defesa em profundidade)
+- R23 ALTO: Sem testes de segurança automatizados
+- R24 ALTO: Requisitos de segurança ausentes nos prompts de IA
+- R25 MÉDIO: Sem uso de IA para testar o próprio sistema
+
+---
+
+## FASE 2 — RELATÓRIO EXECUTIVO
+
+Score: 100 - (críticos × 25) - (altos × 10) - (médios × 5), mínimo 0.
+
+Resultado:
+- 90–100: APROVADO COM DISTINÇÃO
+- 75–89: APROVADO COM RESSALVAS
+- 60–74: APROVADO CONDICIONALMENTE
+- <60: REPROVADO
+
+Apresenta relatório completo em Markdown com:
+1. Score e tabela de severidades
+2. Cada vulnerabilidade: regra, localização, prova de código, correcção resumida
+3. Tabela de acções por prioridade (Imediata / Antes do deploy / Próximo ciclo)
+
+---
+
+## FASE 3 — BLUEPRINT DE CORRECÇÃO
+
+Para cada vulnerabilidade, gera blueprint com:
+1. Contexto (o que existe e por que é inseguro)
+2. Arquitectura da correcção (ASCII/Mermaid quando relevante)
+3. Implementação passo a passo (código completo com comentários em português)
+4. Testes de validação (jest/vitest)
+5. Checklist de deploy
+`;
+  }
+
   async analyzeSecurity(files: { path: string; content: string }[]): Promise<SecurityReport> {
-    const context = files.map(f => `FILE: ${f.path}\nCONTENT:\n${f.content}`).join('\n\n---\n\n');
-
-    const prompt = `
-      Você é um Auditor de Segurança de Código Sênior. Sua tarefa é analisar o código fornecido em busca de vulnerabilidades de segurança.
-      Siga rigorosamente as regras do catálogo de segurança (R01-R25 e CTF-R01-R11).
-
-      CONTEXTO DO CÓDIGO:
-      ${context}
-
-      REGRAS DE ANÁLISE:
-      1. Identifique vulnerabilidades reais.
-      2. Classifique como CRÍTICO, ALTO ou MÉDIO.
-      3. Calcule um score de 0 a 100 (começa em 100, desconta 25 por CRÍTICO, 10 por ALTO, 5 por MÉDIO).
-      4. Retorne APENAS o JSON no formato especificado.
-
-      FORMATO DE RESPOSTA (JSON):
-      {
-        "score": number,
-        "vulnerabilities": [
-          {
-            "rule": "RXX",
-            "severity": "CRÍTICO | ALTO | MÉDIO",
-            "location": "caminho/do/arquivo.ts : linha ou função",
-            "description": "Descrição detalhada do problema",
-            "proof": "Trecho de código vulnerável",
-            "fix": "Como corrigir"
-          }
-        ]
-      }
-    `;
+    const prompt = this.buildAuditPrompt(files);
 
     try {
       const response = await this.ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
-        contents: prompt,
+        model: "gemini-2.0-flash",
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
         config: {
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
             properties: {
               score: { type: Type.NUMBER },
+              resultado: { type: Type.STRING },
+              criticos: { type: Type.NUMBER },
+              altos: { type: Type.NUMBER },
+              medios: { type: Type.NUMBER },
+              relatorio_markdown: { type: Type.STRING },
+              blueprint_markdown: { type: Type.STRING },
               vulnerabilities: {
                 type: Type.ARRAY,
                 items: {
@@ -83,15 +153,14 @@ export class AIService {
                 }
               }
             },
-            required: ["score", "vulnerabilities"]
+            required: ["score", "resultado", "criticos", "altos", "medios", "relatorio_markdown", "blueprint_markdown", "vulnerabilities"]
           }
         }
       });
 
       const text = response.text;
       if (!text) throw new Error('AI returned empty response');
-      const result = JSON.parse(text);
-      return result as SecurityReport;
+      return JSON.parse(text) as SecurityReport;
     } catch (error) {
       console.error('Error in AI security analysis:', error);
       throw error;
@@ -110,8 +179,8 @@ export class AIService {
 
     try {
       const response = await this.ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
+        model: "gemini-2.0-flash",
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -131,32 +200,6 @@ export class AIService {
   }
 
   async generateBlueprint(report: SecurityReport): Promise<string> {
-    const prompt = `
-      Com base no relatório de segurança fornecido, gere um blueprint completo de correção em formato Markdown.
-      Siga rigorosamente o template de blueprint de segurança.
-      
-      RELATÓRIO:
-      ${JSON.stringify(report)}
-
-      O blueprint deve conter:
-      1. Score atual vs esperado.
-      2. Tabela de vulnerabilidades.
-      3. Para cada falha: Contexto, Arquitetura da Correção (ASCII), Implementação Passo a Passo e Teste de Validação.
-      4. Checklist global pré-deploy.
-      
-      Responda APENAS com o conteúdo Markdown.
-    `;
-
-    try {
-      const response = await this.ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
-        contents: prompt,
-      });
-
-      return response.text || '';
-    } catch (error) {
-      console.error('Error generating blueprint:', error);
-      throw error;
-    }
+    return report.blueprint_markdown;
   }
 }

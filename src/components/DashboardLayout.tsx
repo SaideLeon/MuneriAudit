@@ -71,7 +71,7 @@ export function DashboardLayout({
   onAnalyze,
   onAutoSelect
 }: DashboardLayoutProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'vulnerabilities' | 'blueprint'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'vulnerabilities' | 'report' | 'blueprint'>('overview');
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isAssistantCollapsed, setIsAssistantCollapsed] = useState(false);
@@ -208,6 +208,12 @@ export function DashboardLayout({
                     >
                       Falhas
                     </button>
+                    <button 
+                      onClick={() => setActiveTab('report')}
+                      className={`px-3 py-1 rounded font-mono text-[10px] uppercase tracking-widest transition ${activeTab === 'report' ? 'bg-[var(--gold2)] text-black' : 'text-[var(--muted)] hover:bg-[var(--border)]/30'}`}
+                    >
+                      Relatório
+                    </button>
                   </>
                 )}
               </div>
@@ -264,18 +270,29 @@ export function DashboardLayout({
               </div>
             ) : activeTab === 'overview' ? (
               <div className="space-y-8">
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2">
                   <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--parchment)]">
-                    <h4 className="font-serif text-xl">{report?.score}</h4>
+                    <h4 className="font-serif text-2xl">{report?.score}</h4>
                     <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--faint)]">Score Geral</p>
                   </div>
                   <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--parchment)]">
-                    <h4 className="font-serif text-xl text-red-500">{report?.vulnerabilities.filter(v => v.severity === 'CRÍTICO').length}</h4>
+                    <h4 className="font-serif text-lg text-[var(--gold2)]">{report?.resultado}</h4>
+                    <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--faint)]">Resultado Final</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--parchment)]">
+                    <h4 className="font-serif text-xl text-red-500">{report?.criticos}</h4>
                     <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--faint)]">Críticos</p>
                   </div>
                   <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--parchment)]">
-                    <h4 className="font-serif text-xl text-orange-500">{report?.vulnerabilities.filter(v => v.severity === 'ALTO').length}</h4>
+                    <h4 className="font-serif text-xl text-orange-500">{report?.altos}</h4>
                     <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--faint)]">Alto Risco</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--parchment)]">
+                    <h4 className="font-serif text-xl text-yellow-500">{report?.medios}</h4>
+                    <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--faint)]">Médio Risco</p>
                   </div>
                 </div>
 
@@ -283,9 +300,14 @@ export function DashboardLayout({
                   <h4 className="font-serif text-lg">Insights da IA</h4>
                   <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--heroRight)]/10 text-sm text-[var(--muted)] leading-relaxed">
                     A análise identificou {report?.vulnerabilities.length} pontos de atenção. 
+                    O status atual é <strong>{report?.resultado}</strong>. 
                     Recomendamos priorizar as falhas críticas que afetam a integridade dos dados.
                   </div>
                 </div>
+              </div>
+            ) : activeTab === 'report' ? (
+              <div className="prose prose-sm prose-invert max-w-none prose-headings:font-serif prose-headings:text-[var(--parchment)] prose-p:text-[var(--faint)] prose-code:text-[var(--gold2)]">
+                <ReactMarkdown>{report?.relatorio_markdown}</ReactMarkdown>
               </div>
             ) : activeTab === 'vulnerabilities' ? (
               <div className="space-y-4">

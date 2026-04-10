@@ -74,7 +74,17 @@ export function FileExplorer({ files, onSelect, onAutoSelect, analyzing, onPrevi
       <div key={node.path} style={{ paddingLeft: `${depth * 16}px` }}>
         <div 
           className={`flex items-center gap-2 py-1.5 px-2 rounded cursor-pointer group transition ${isPreviewing ? 'bg-[var(--gold2)]/20 border-l-2 border-[var(--gold2)]' : 'hover:bg-[var(--border)]/20'}`}
-          onClick={() => isFolder ? toggleFolder(node.path) : toggleFile(node.path)}
+          onClick={() => {
+            if (isFolder) {
+              toggleFolder(node.path);
+            } else {
+              if (compact) {
+                onPreviewFile(node.path);
+              } else {
+                toggleFile(node.path);
+              }
+            }
+          }}
         >
           {isFolder ? (
             isExpanded ? <ChevronDown size={14} className="text-[var(--faint)]" /> : <ChevronRight size={14} className="text-[var(--faint)]" />
@@ -84,20 +94,24 @@ export function FileExplorer({ files, onSelect, onAutoSelect, analyzing, onPrevi
           
           {isFolder ? <Folder size={16} className="text-[var(--gold2)]" /> : <File size={16} className="text-[var(--muted)]" />}
           
-          <span className={`text-sm font-mono transition-colors ${isPreviewing || isSelected ? 'text-[var(--gold2)]' : 'text-[var(--muted)]'}`}>
+          <span className={`text-sm font-mono transition-colors ${isPreviewing || (!compact && isSelected) ? 'text-[var(--gold2)]' : 'text-[var(--muted)]'}`}>
             {node.name}
           </span>
 
           {!isFolder && (
             <div className="ml-auto flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
-              <button 
-                onClick={(e) => { e.stopPropagation(); onPreviewFile(node.path); }}
-                className="p-1 rounded hover:bg-[var(--border)]/40 text-[var(--faint)] hover:text-[var(--gold2)]"
-                title="Visualizar Código"
-              >
-                <Code size={14} />
-              </button>
-              {isSelected ? <CheckSquare size={14} className="text-[var(--gold2)]" /> : <Square size={14} className="text-[var(--faint)]" />}
+              {!compact ? (
+                <>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); onPreviewFile(node.path); }}
+                    className="p-1 rounded hover:bg-[var(--border)]/40 text-[var(--faint)] hover:text-[var(--gold2)]"
+                    title="Visualizar Código"
+                  >
+                    <Code size={14} />
+                  </button>
+                  {isSelected ? <CheckSquare size={14} className="text-[var(--gold2)]" /> : <Square size={14} className="text-[var(--faint)]" />}
+                </>
+              ) : null}
             </div>
           )}
         </div>

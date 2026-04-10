@@ -9,11 +9,19 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { GitHubService, GitHubFile } from '@/services/service.github';
 import { AIService, SecurityReport } from '@/services/service.ai';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, ArrowRight, Github, Lock, Zap } from 'lucide-react';
+import { Shield, ArrowRight, Github, Lock, Zap, History } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
+export interface AuditHistoryItem {
+  id: string;
+  repoName: string;
+  date: string;
+  score: number;
+  report: SecurityReport;
+}
 
 export default function AuditPage() {
   const { themeMode, toggleThemeMode } = useThemeMode();
@@ -33,6 +41,24 @@ export default function AuditPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [refactoringSuggestion, setRefactoringSuggestion] = useState<string | null>(null);
   const [refactoringLoading, setRefactoringLoading] = useState(false);
+  const [history, setHistory] = useState<AuditHistoryItem[]>([]);
+
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('muneri_audit_history');
+    if (savedHistory) {
+      try {
+        setHistory(JSON.parse(savedHistory));
+      } catch (e) {
+        console.error('Failed to parse history', e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (history.length > 0) {
+      localStorage.setItem('muneri_audit_history', JSON.stringify(history));
+    }
+  }, [history]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -78,6 +104,9 @@ export default function AuditPage() {
     
     setAnalyzing(true);
     setError(null);
+    setReport(null);
+    setBlueprint(null);
+    setRefactoringSuggestion(null);
 
     try {
       const github = new GitHubService(repoInfo.token);
@@ -94,6 +123,16 @@ export default function AuditPage() {
       const securityReport = await ai.analyzeSecurity(fileContents);
       setReport(securityReport);
       
+      // Add to history
+      const historyItem: AuditHistoryItem = {
+        id: crypto.randomUUID(),
+        repoName: `${repoInfo.owner}/${repoInfo.repo}`,
+        date: new Date().toISOString(),
+        score: securityReport.score,
+        report: securityReport
+      };
+      setHistory(prev => [historyItem, ...prev].slice(0, 20)); // Keep last 20
+
       // Scroll to report
       setTimeout(() => {
         document.getElementById('report-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -212,7 +251,14 @@ export default function AuditPage() {
                 onGenerateBlueprint={handleGenerateBlueprint}
                 blueprintLoading={blueprintLoading}
                 blueprint={blueprint}
-                onReset={() => { setReport(null); setFiles([]); setRepoInfo(null); setBlueprint(null); setPreviewFile(null); }}
+                onReset={() => { 
+                  setReport(null); 
+                  setFiles([]); 
+                  setRepoInfo(null); 
+                  setBlueprint(null); 
+                  setPreviewFile(null); 
+                  setRefactoringSuggestion(null);
+                }}
                 themeMode={themeMode}
                 onToggleTheme={toggleThemeMode}
                 onLogout={logout}
@@ -228,6 +274,14 @@ export default function AuditPage() {
                 onRefactor={handleRefactor}
                 refactoringSuggestion={refactoringSuggestion}
                 refactoringLoading={refactoringLoading}
+                history={history}
+                onLoadFromHistory={(item) => {
+                  setReport(item.report);
+                  setRepoInfo({ owner: item.repoName.split('/')[0], repo: item.repoName.split('/')[1] });
+                  setBlueprint(null);
+                  setRefactoringSuggestion(null);
+                  setPreviewFile(null);
+                }}
               />
             </motion.div>
           )}
